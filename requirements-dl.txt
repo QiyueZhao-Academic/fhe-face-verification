@@ -1,0 +1,6 @@
+# Optional: real face embeddings. Heavy (TensorFlow). Python 3.12 only.
+# Install after the core requirements, in the same virtual environment.
+tensorflow>=2.16,<2.20 ; sys_platform == "darwin"
+tf-keras>=2.16
+deepface>=0.0.93
+opencv-python-headless>=4.9

@@ -1,0 +1,4 @@
+# Optional Python FHE backend. If the wheel does not exist for your
+# Python/macOS combination, use the native SEAL backend instead
+# (bash scripts/build_cpp.sh) -- it is the recommended path on Apple Silicon.
+tenseal>=0.3.15
