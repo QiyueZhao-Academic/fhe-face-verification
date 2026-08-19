@@ -1,0 +1,7 @@
+# Pinned to major versions that publish macOS arm64 wheels, so the environment
+# installs without a compiler on Apple Silicon.
+numpy>=1.26,<3
+onnxruntime>=1.17,<2
+opencv-python-headless>=4.9,<5
+matplotlib>=3.8,<4
+reportlab>=4.1,<5
