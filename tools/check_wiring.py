@@ -203,8 +203,7 @@ def emitted_json_names(paths):
 def referenced_json_paths():
     """Dotted paths the python side reads, resolving its local aliases."""
     direct, names = set(), set()
-    for module in (("python", "ffv", "report.py"), ("python", "ffv", "figures.py"),
-                   ("python", "crosscheck.py")):
+    for module in (("python", "ffv", "figures.py"), ("python", "crosscheck.py")):
         text = read(*module)
         # Aliases such as: crypto = r["crypto"]
         alias = {}
@@ -266,7 +265,7 @@ def check_results_json():
 
     # The schema string is the version handshake between the two halves.
     cpp_schema = re.search(r'key_string\("schema",\s*"([^"]+)"\)', read("src", "bench", "emit_json.cpp"))
-    py_schema = re.search(r'!=\s*"([^"]+)"', read("python", "make_report.py"))
+    py_schema = re.search(r'!=\s*"([^"]+)"', read("python", "make_figures.py"))
     check(
         cpp_schema and py_schema and cpp_schema.group(1) == py_schema.group(1),
         "the results schema name matches on both sides",
@@ -410,7 +409,7 @@ def check_python_wiring():
                                     "--no-download"}),
         ("python/extract_embeddings.py", {"--lfw-root", "--pairs", "--models", "--out",
                                           "--detector-size", "--limit-pairs"}),
-        ("python/make_report.py", {"--results", "--scores", "--protocol", "--out-dir"}),
+        ("python/make_figures.py", {"--results", "--scores", "--out-dir"}),
         ("python/crosscheck.py", {"--results", "--scores", "--markdown"}),
     ):
         text = read(*script.split("/"))
@@ -420,7 +419,7 @@ def check_python_wiring():
               "missing: " + ", ".join(missing) if missing else f"{len(wanted)} flags")
 
     # Local package modules imported by the entry points must exist.
-    for script in ("python/extract_embeddings.py", "python/make_report.py"):
+    for script in ("python/extract_embeddings.py", "python/make_figures.py"):
         text = read(*script.split("/"))
         for names in re.findall(r"^from ffv import ([^#\n]+)", text, flags=re.M):
             for name in [n.strip() for n in names.split(",")]:
@@ -432,8 +431,7 @@ def check_python_wiring():
     # Third-party imports must be covered by requirements.txt.
     requirements = read("python", "requirements.txt").lower()
     distribution = {"cv2": "opencv-python-headless", "numpy": "numpy",
-                    "onnxruntime": "onnxruntime", "matplotlib": "matplotlib",
-                    "reportlab": "reportlab"}
+                    "onnxruntime": "onnxruntime", "matplotlib": "matplotlib"}
     imported = set()
     for base, _, files in os.walk(os.path.join(ROOT, "python")):
         for name in files:

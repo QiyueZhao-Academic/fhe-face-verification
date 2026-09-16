@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 #
 # One command runs the whole study: environment, dataset, build, tests,
-# benchmark, two-process protocol, report.
+# benchmark, two-process protocol, figures.
 #
 #     cd ~/FHE/fhe-face-verification
 #     bash run.sh
@@ -13,7 +13,7 @@
 # WHERE THINGS ARE WRITTEN
 #   <project>/build       compiled binaries
 #   <project>/artifacts   templates, results.json, scores.csv, session files
-#   <project>/reports     report.pdf, report.md, figures
+#   <project>/reports     figures/ ; the hand-written report lives here too
 #   $FHE_HOME/ffv-cache   Python environment, model weights, LFW images
 #
 # FHE_HOME defaults to the directory holding this project, so a project placed
@@ -36,7 +36,7 @@ MODEL_PACK="buffalo_l"
 LIMIT_PAIRS=0
 LFW_ROOT=""
 SKIP_ASSETS=0
-SKIP_REPORT=0
+SKIP_FIGURES=0
 NO_DOWNLOAD=0
 SKIP_EXTRACT=0
 QUICK=0
@@ -61,9 +61,9 @@ run.sh [options]
   --skip-assets         assume the cache already holds the dataset and models
   --no-download         use local copies of the dataset alone, downloading nothing
   --skip-extract        reuse the existing template container
-  --skip-report         stop after the benchmark
+  --skip-figures        stop before drawing the figures
   --only STAGE          run one stage: env, assets, extract, build, test,
-                        bench, protocol, report, crosscheck
+                        bench, protocol, figures, crosscheck
   -h, --help            this text
 
 Environment:
@@ -85,7 +85,7 @@ while [ $# -gt 0 ]; do
         --skip-assets) SKIP_ASSETS=1 ;;
         --no-download) NO_DOWNLOAD=1 ;;
         --skip-extract) SKIP_EXTRACT=1 ;;
-        --skip-report) SKIP_REPORT=1 ;;
+        --skip-figures) SKIP_FIGURES=1 ;;
         --only) ONLY_STAGE="$2"; shift ;;
         -h|--help) usage; exit 0 ;;
         *) printf 'run.sh: unknown option %s\n\n' "$1"; usage; exit 2 ;;
@@ -190,7 +190,7 @@ resolve_python() {
     fi
 }
 
-# Stages that import onnxruntime, numpy, matplotlib or reportlab need the
+# Stages that import onnxruntime, numpy or matplotlib need the
 # environment, so they say so instead of failing on a missing interpreter.
 need_venv() {
     [ -x "$PY" ] || die "the python environment is absent. Build it first:
@@ -295,12 +295,12 @@ install python@3.12 if the next step fails" ;;
     fi
 
     "$PY" -m pip install --quiet --upgrade pip >/dev/null 2>&1 || true
-    if ! "$PY" -c 'import onnxruntime, cv2, numpy, reportlab, matplotlib' >/dev/null 2>&1; then
+    if ! "$PY" -c 'import onnxruntime, cv2, numpy, matplotlib' >/dev/null 2>&1; then
         info "installing python packages"
         "$PY" -m pip install --quiet -r "$PROJECT_DIR/python/requirements.txt" \
             || die "package installation failed. See $PROJECT_DIR/python/requirements.txt"
     fi
-    "$PY" -c 'import onnxruntime, cv2, numpy, reportlab, matplotlib
+    "$PY" -c 'import onnxruntime, cv2, numpy, matplotlib
 print("    onnxruntime %s, opencv %s, numpy %s" % (onnxruntime.__version__, cv2.__version__, numpy.__version__))' \
         || die "the python environment is incomplete"
 fi
@@ -463,17 +463,16 @@ except Exception:
 fi
 
 # ==========================================================================
-# 8. Report
+# 8. Figures
 # ==========================================================================
-if want report && [ "$SKIP_REPORT" -eq 0 ]; then
-    step 8 "report"
+if want figures && [ "$SKIP_FIGURES" -eq 0 ]; then
+    step 8 "figures"
     need_venv
     guard_path "$REPORT_DIR"
-    "$PY" "$PROJECT_DIR/python/make_report.py" \
+    "$PY" "$PROJECT_DIR/python/make_figures.py" \
         --results "$ARTIFACT_DIR/results.json" \
         --scores "$ARTIFACT_DIR/scores.csv" \
-        --protocol "$ARTIFACT_DIR/session/protocol.json" \
-        --out-dir "$REPORT_DIR" || die "report generation failed"
+        --out-dir "$REPORT_DIR" || die "figure generation failed"
 fi
 
 # ==========================================================================
@@ -490,10 +489,7 @@ fi
 
 # --------------------------------------------------------------------------
 say "done"
-[ -f "$REPORT_DIR/report.pdf" ] && info "report  : $REPORT_DIR/report.pdf"
-[ -f "$REPORT_DIR/report.md" ] && info "markdown: $REPORT_DIR/report.md"
 [ -f "$ARTIFACT_DIR/results.json" ] && info "record  : $ARTIFACT_DIR/results.json"
 [ -f "$ARTIFACT_DIR/scores.csv" ] && info "scores  : $ARTIFACT_DIR/scores.csv"
-if [ -f "$REPORT_DIR/report.pdf" ] && [ "$(uname -s)" = "Darwin" ]; then
-    printf '\n    open it with: open "%s"\n' "$REPORT_DIR/report.pdf"
-fi
+[ -d "$REPORT_DIR/figures" ] && info "figures : $REPORT_DIR/figures"
+exit 0

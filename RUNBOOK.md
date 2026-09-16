@@ -21,7 +21,7 @@ The project writes into three of its own subdirectories and one cache:
 |---|---|
 | `~/FHE/fhe-face-verification/build` | compiled binaries |
 | `~/FHE/fhe-face-verification/artifacts` | templates, `results.json`, `scores.csv`, session files |
-| `~/FHE/fhe-face-verification/reports` | `report.pdf`, `report.md`, figures |
+| `~/FHE/fhe-face-verification/reports` | `figures/`, and the hand-written report |
 | `~/FHE/ffv-cache` | Python environment, model weights, LFW images |
 
 `run.sh` refuses to read or write any path that lies inside a directory named
@@ -38,7 +38,7 @@ bash run.sh
 ```
 
 The nine stages are: environment, dataset and models, face templates, build,
-self-test and isolation check, benchmark, two-process protocol, report,
+self-test and isolation check, benchmark, two-process protocol, figures,
 cross-check.
 
 First run on an M1 with 8 GB of memory: roughly 10 minutes of downloads,
@@ -58,7 +58,7 @@ up; use the full run for numbers worth quoting.
 Open the result:
 
 ```bash
-open reports/report.pdf
+open reports/figures
 ```
 
 ---
@@ -75,8 +75,8 @@ bash run.sh --only build       # compile
 bash run.sh --only test        # self-test and server isolation
 bash run.sh --only bench       # every experiment, writes results.json
 bash run.sh --only protocol    # one verification across two processes
-bash run.sh --only report      # report.pdf and report.md
-bash run.sh --only crosscheck  # verify the report against the record
+bash run.sh --only figures     # every figure, into reports/figures
+bash run.sh --only crosscheck  # verify the record, and a report when one is there
 ```
 
 ### Stage 1: environment
@@ -107,7 +107,7 @@ brew install seal cmake        # the fast path, if it is not already installed
 ```
 
 The Python packages are `onnxruntime`, `opencv-python-headless`, `numpy`,
-`matplotlib` and `reportlab`. All five publish Apple Silicon wheels, so nothing
+and `matplotlib`. All four publish Apple Silicon wheels, so nothing
 compiles. An interpreter between 3.10 and 3.13 is chosen when one is present,
 because `onnxruntime` publishes wheels for that range.
 
@@ -293,19 +293,15 @@ The secret key is written to `$SESSION/private` and read by `ffv_client` alone.
 `$SESSION/public` holds the session descriptor and the evaluation keys, and is
 the only directory `ffv_server` opens.
 
-### Stage 8: report
+### Stage 8: figures
 
 ```bash
-python3 python/make_report.py --results artifacts/results.json --out-dir reports
+python3 python/make_figures.py --results artifacts/results.json --out-dir reports
 ```
 
-Writes `reports/report.pdf`, `reports/report.md` and `reports/figures`. Both
-documents are rendered from one block list, so their prose and their numbers are
-identical. Every figure in the text is read from `results.json`; a metric the
-run declined to emit stops the generation with a message naming the path, so the
-report never carries a placeholder.
-
-The PDF is produced by ReportLab and needs no LaTeX.
+Writes every figure into `reports/figures`, each one drawn from `results.json`
+and from `scores.csv` alone. The prose of the report is written by hand; this
+stage supplies the figures it cites and nothing else.
 
 ### Stage 9: cross-check
 
@@ -316,8 +312,11 @@ python3 python/crosscheck.py --results artifacts/results.json \
 
 Three groups of checks: derived values inside `results.json` recomputed from
 their inputs; the accuracy, area under the curve and largest error recomputed
-from `scores.csv` and compared with the record; and every number appearing in
-`report.md` matched against the set of numbers derivable from the record.
+from `scores.csv` and compared with the record; and, when a Markdown report is
+present at the path given by `--markdown`, every number in it matched against
+the set of numbers derivable from the record. Writing the report as Markdown
+therefore puts the hand-written prose under the same check the record is under.
+The group is skipped when that file is absent.
 
 ---
 
@@ -392,7 +391,7 @@ ONNX model at a time; `--batch-size 8` lowers its peak.
 benchmark and the report so that both come from the same run:
 
 ```bash
-bash run.sh --only bench && bash run.sh --only report && bash run.sh --only crosscheck
+bash run.sh --only bench && bash run.sh --only figures && bash run.sh --only crosscheck
 ```
 
 ---

@@ -5,8 +5,9 @@ build/
 
 # Run output
 artifacts/
-reports/
+reports/*
 !reports/.gitkeep
+!reports/report.pdf
 
 # Python
 __pycache__/
@@ -19,10 +20,3 @@ venv/
 .vscode/
 .idea/
 compile_commands.json
-build/
-.venv/
-__pycache__/
-*.pyc
-.DS_Store
-*.zip
-ffv-cache/
