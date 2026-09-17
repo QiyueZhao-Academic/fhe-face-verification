@@ -24,7 +24,7 @@ Springer LNCS format.
 
 ---
 
-## Résumé (français)
+## 🇫🇷 Résumé (français)
 
 Vérification faciale 1:1 sur gabarits chiffrés. Le client dérive un gabarit de
 512 dimensions de norme unitaire, le chiffre sous RNS-CKKS et conserve la clé
